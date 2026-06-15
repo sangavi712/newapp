@@ -56,8 +56,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
-      return;
+      return; // Wait for layout to handle auto-login
     }
 
     const fetchDashboard = async () => {
@@ -69,10 +68,6 @@ export default function DashboardPage() {
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
-        if ((error as any)?.response?.status === 401) {
-          logout();
-          router.push('/login');
-        }
       } finally {
         setLoading(false);
       }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/store/useAuthStore';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -31,7 +32,7 @@ import { useNotification } from '@/components/NotificationProvider';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, login, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const notify = useNotification();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,9 +44,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (isMounted && !isAuthenticated) {
-      router.push('/login');
+      const autoLogin = async () => {
+        try {
+          const res = await api.post('/auth/login', { email: 'guest@buddylearn.ai', password: 'guestpassword' });
+          login(res.data.user, res.data.access_token);
+        } catch (e) {
+          try {
+            await api.post('/auth/register', { username: 'Guest', email: 'guest@buddylearn.ai', password: 'guestpassword' });
+            const res = await api.post('/auth/login', { email: 'guest@buddylearn.ai', password: 'guestpassword' });
+            login(res.data.user, res.data.access_token);
+          } catch (registerError) {
+            console.error('Guest login failed', registerError);
+          }
+        }
+      };
+      autoLogin();
     }
-  }, [isAuthenticated, router, isMounted]);
+  }, [isAuthenticated, isMounted, login]);
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
