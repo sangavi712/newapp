@@ -49,3 +49,7 @@ venv.bak/
 # Logs
 logs/
 *.log
+
+# Databases
+instance/
+*.db
