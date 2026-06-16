@@ -43,24 +43,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    if (isMounted && !isAuthenticated) {
-      const autoLogin = async () => {
-        try {
-          const res = await api.post('/auth/login', { email: 'guest@buddylearn.ai', password: 'guestpassword' });
-          login(res.data.user, res.data.access_token);
-        } catch (e) {
-          try {
-            await api.post('/auth/register', { username: 'Guest', email: 'guest@buddylearn.ai', password: 'guestpassword' });
-            const res = await api.post('/auth/login', { email: 'guest@buddylearn.ai', password: 'guestpassword' });
-            login(res.data.user, res.data.access_token);
-          } catch (registerError) {
-            console.error('Guest login failed', registerError);
-          }
-        }
-      };
-      autoLogin();
+    if (!isMounted) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
     }
-  }, [isAuthenticated, isMounted, login]);
+
+    const verifyTokenAndSyncProfile = async () => {
+      try {
+        const res = await api.get('/auth/profile');
+        const userData = {
+          id: res.data.id,
+          username: res.data.username,
+          email: res.data.email,
+          phone: res.data.phone,
+          level: res.data.profile.level,
+          xp: res.data.profile.xp,
+          avatar_url: res.data.profile.avatar_url
+        };
+        login(userData, token);
+      } catch (err) {
+        console.warn('Session validation failed. Logging out...');
+        logout();
+        router.push('/login');
+      }
+    };
+
+    verifyTokenAndSyncProfile();
+  }, [isMounted, login, logout, router]);
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
