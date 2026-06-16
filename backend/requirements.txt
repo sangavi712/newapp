@@ -8,5 +8,7 @@ python-dotenv==1.0.0
 openai==1.6.1
 pymongo[srv]
 bcrypt
+psycopg2-binary==2.9.9
+gunicorn==21.2.0
 
 
