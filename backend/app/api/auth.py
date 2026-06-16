@@ -1,12 +1,15 @@
 from flask import request, jsonify
 import bcrypt
 import random
+import logging
 from datetime import datetime
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity  # type: ignore
 from app.api import auth_bp
 from app.extensions import db
 from app.models import User, UserProfile, KnowledgeTree, Streak
 from app.sync import mongo_db, get_next_sequence_value, sync_mongo_to_sql
+
+logger = logging.getLogger(__name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -194,7 +197,8 @@ def login():
         })
         
         if not user_doc:
-            return jsonify({'message': 'Invalid credentials'}), 401
+            logger.warning(f"Login failure: User with identity '{identity}' not found in MongoDB Atlas.")
+            return jsonify({'message': 'Account with this Username, Email, or Phone does not exist'}), 401
             
         # Verify password (supporting legacy Werkzeug and new bcrypt hashes)
         pw_ok = False
@@ -205,24 +209,30 @@ def login():
         else:
             try:
                 pw_ok = bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
-            except Exception:
+            except Exception as e:
+                logger.error(f"Error checking bcrypt password for {identity}: {e}")
                 pass
             
         if not pw_ok:
-            return jsonify({'message': 'Invalid credentials'}), 401
+            logger.warning(f"Login failure: Incorrect password supplied for '{identity}' (MongoDB Atlas).")
+            return jsonify({'message': 'Incorrect password'}), 401
             
         user_id = user_doc['id']
         username = user_doc['username']
         email = user_doc['email']
         
         # 2. Sync all user data from MongoDB Atlas to local SQLite Cache
-        sync_mongo_to_sql(user_id)
+        try:
+            sync_mongo_to_sql(user_id)
+        except Exception as e:
+            logger.error(f"Error during SQLite synchronization for user_id={user_id}: {e}")
         
     else:
         # SQLite fallback search (allow username, email or phone)
         user = User.query.filter((User.username == identity) | (User.email == identity) | (User.phone == identity)).first()
         if not user:
-            return jsonify({'message': 'Invalid credentials'}), 401
+            logger.warning(f"Login failure: User with identity '{identity}' not found in local SQLite database.")
+            return jsonify({'message': 'Account with this Username, Email, or Phone does not exist'}), 401
             
         # Verify password (supporting legacy Werkzeug and new bcrypt hashes)
         pw_ok = False
@@ -233,16 +243,18 @@ def login():
         else:
             try:
                 pw_ok = bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
-            except Exception:
+            except Exception as e:
+                logger.error(f"Error checking bcrypt password for local user {identity}: {e}")
                 pass
             
         if not pw_ok:
-            return jsonify({'message': 'Invalid credentials'}), 401
+            logger.warning(f"Login failure: Incorrect password supplied for '{identity}' (SQLite).")
+            return jsonify({'message': 'Incorrect password'}), 401
             
         user_id = user.id
         username = user.username
         email = user.email
-
+ 
     access_token = create_access_token(identity=str(user_id))
     return jsonify({
         'access_token': access_token,

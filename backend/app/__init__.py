@@ -5,7 +5,10 @@ import os
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    
+    # Configure CORS to support custom client origins (e.g., deployed Vercel frontend)
+    client_url = os.environ.get('CLIENT_URL', '*')
+    CORS(app, resources={r"/api/*": {"origins": [client_url] if client_url != '*' else '*'}}, supports_credentials=True)
 
     import datetime
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///buddylearn.db')

@@ -1,7 +1,10 @@
 import os
 import pymongo
+import logging
 from datetime import datetime, date
 from sqlalchemy import event
+
+logger = logging.getLogger(__name__)
 
 mongo_client = None
 mongo_db = None
@@ -40,6 +43,8 @@ def init_mongodb(app):
         print("\n" + "="*80)
         print(f"ERROR: Failed to connect to MongoDB Atlas at: {mongo_uri}")
         print(f"Detail: {e}")
+        import traceback
+        traceback.print_exc()
         print("Application will run in LOCAL-ONLY mode using SQLite.")
         print("="*80 + "\n")
         mongo_client = None
