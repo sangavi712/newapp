@@ -1,8 +1,9 @@
-# 🐾 BuddyLearn AI
+# 🐾 BuddyLearn AI `v1.1.0-release`
 
 ![BuddyLearn Banner](frontend/public/logo.png)
 
 **BuddyLearn AI** is a next-generation, gamified, AI-powered learning platform designed to make education highly engaging, interactive, and fun for all ages. With built-in gamification, an advanced multilingual AI companion, and various specialized hubs, learning becomes an adventure.
+
 
 ## ✨ Key Features
 
@@ -69,9 +70,47 @@ npm run dev
 ```
 *The frontend will run on `http://localhost:3000`*
 
+## 🔄 Cross-System Login & Cloud Synchronization
+
+To allow logging in and retrieving your learning progress, XP, streaks, and knowledge tree when working across multiple systems or testing on other devices:
+
+### 1. Cloud Persistence Configuration (Required for Cross-System Login)
+By default, the application runs in **local-only mode** using a system-specific SQLite database cache (`backend/instance/buddylearn.db`). If you switch to another machine, this local database will be empty. 
+To share accounts and progress across systems:
+1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database).
+2. Set the `MONGODB_URI` environment variable in your `backend/.env` file on both machines:
+   ```env
+   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/?retryWrites=true&w=majority
+   ```
+3. When connected, any registration or progress update automatically replicates to MongoDB Atlas. When logging in on a new system, the backend detects a local cache miss and automatically pulls all your profiles, streaking history, coding lessons, stories, and knowledge tree data down to that machine's local SQLite database.
+
+### 2. Networking Setup (For External/Mobile Devices)
+If you run the app on your developer machine and want to access it from another system or mobile device on the same local network:
+- **Frontend URL Config**: Create a `.env.local` file in the `frontend` folder and set `NEXT_PUBLIC_API_URL` to your developer machine's local IP address (instead of `localhost`):
+  ```env
+  NEXT_PUBLIC_API_URL=http://<YOUR_DEV_IP_ADDRESS>:5000/api
+  ```
+- **Backend CORS Config**: In `backend/.env`, set `CLIENT_URL` to your frontend's hostname/IP so the backend accepts cross-origin requests:
+  ```env
+  CLIENT_URL=http://<YOUR_DEV_IP_ADDRESS>:3000
+  ```
+- The backend automatically binds to `0.0.0.0:5000` to accept connections on all network interfaces.
+
+### 3. Database Initialization & Seeding
+On any new system, you must initialize and seed the SQLite cache database with early learning lessons, music tracks, vocabulary, and stories. Run:
+```bash
+cd backend
+# Make sure virtual env is active
+venv\Scripts\activate
+# Run seed script
+python seed.py
+```
+
 ## 🌐 Deployment
-- **Frontend**: Fully optimized for one-click deployment on [Vercel](https://vercel.com). Just connect this repository and it will automatically deploy using the `vercel.json` config!
-- **Backend**: Can be deployed on any Python-friendly hosting service like Render, Heroku, or Railway. (Remember to configure a persistent PostgreSQL database for production instead of SQLite).
+
+- **Frontend**: Fully optimized for one-click deployment on [Vercel](https://vercel.com). Connect this repository to Vercel, and configure `NEXT_PUBLIC_API_URL` pointing to your deployed backend URL.
+- **Backend**: Can be deployed on any Python-friendly hosting service like Render, Heroku, or Railway. Ensure you configure `MONGODB_URI` for persistent cloud storage.
 
 ---
 *Built with ❤️ to make learning magical.*
+
