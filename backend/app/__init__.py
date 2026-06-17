@@ -1,9 +1,9 @@
 # pyrefly: ignore [missing-import]
 from flask import Flask
-# pyrefly: ignore [missing-import]
+# pyrefly: ignore [missing-import, untyped-import]
 from flask_cors import CORS
 # pyrefly: ignore [missing-import]
-from app.extensions import db, migrate, jwt
+from app.extensions import db, migrate, jwt, limiter
 import os
 
 def create_app():
@@ -35,6 +35,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    limiter.init_app(app)
 
     # Initialize MongoDB sync client and register SQLAlchemy listeners
     # pyrefly: ignore [missing-import]
@@ -108,5 +109,28 @@ def create_app():
         except Exception as e:
             # Bypass and let jwt_required() handle validation failures
             pass
+
+    @app.after_request
+    def standardize_response(response):
+        if response.is_json:
+            import json
+            try:
+                original_data = response.get_json()
+                if isinstance(original_data, dict) and 'success' in original_data and 'data' in original_data:
+                    return response
+                
+                status_code = response.status_code
+                success = 200 <= status_code < 300
+                message = original_data.pop('message', '') if isinstance(original_data, dict) and 'message' in original_data else ''
+                
+                new_data = {
+                    'success': success,
+                    'message': message,
+                    'data': original_data
+                }
+                response.set_data(json.dumps(new_data))
+            except Exception:
+                pass
+        return response
 
     return app

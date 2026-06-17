@@ -106,16 +106,53 @@ venv\Scripts\activate
 python seed.py
 ```
 
-## 🌐 Production Deployment
+## 🌐 Cloud Server Production Deployment (VPS)
 
-- **Frontend (Vercel)**: Fully optimized for one-click deployment on [Vercel](https://vercel.com). Connect this repository to Vercel, and configure the following environment variable:
-  - `NEXT_PUBLIC_API_URL`: Your deployed backend URL (e.g., `https://<backend>.onrender.com/api`)
+This project is configured for a robust production deployment on a VPS (like Ubuntu on AWS EC2, DigitalOcean, or Linode) using **Nginx, PM2, and Gunicorn**.
 
-- **Backend (Render / Railway / Heroku)**: Can be deployed on any Python-friendly hosting service. Ensure you configure the following environment variables:
-  - `MONGODB_URI`: Your MongoDB Atlas connection string for persistent cloud storage and cross-device sync.
-  - `CLIENT_URL`: Your deployed frontend URL (e.g., `https://<frontend>.vercel.app`) to configure CORS.
-  - `JWT_SECRET_KEY`: A secure random string for signing authentication tokens.
-  - `OPENAI_API_KEY`: Your OpenAI key for AI Buddy features.
+### 1. Server Preparation
+On your new Ubuntu server, install the required dependencies:
+```bash
+sudo apt update
+sudo apt install -y curl git nginx python3-pip python3-venv
+# Install Node.js & PM2
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g pm2
+```
+
+### 2. Clone and Setup
+```bash
+git clone <your-repo-url> buddylearn-ai
+cd buddylearn-ai
+
+# Set up environment variables based on the .env.production templates
+cp backend/.env.production backend/.env
+cp frontend/.env.production frontend/.env.local
+nano backend/.env # Fill in your MongoDB Atlas URL and Secrets
+nano frontend/.env.local # Fill in your public API URL
+```
+
+### 3. Deploy
+A comprehensive `deploy.sh` script is provided to automate dependency installation and service restarts.
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### 4. Nginx Configuration
+```bash
+sudo cp nginx.conf /etc/nginx/sites-available/buddylearn
+sudo ln -s /etc/nginx/sites-available/buddylearn /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+sudo systemctl reload nginx
+```
+
+### 5. SSL with Let's Encrypt (Certbot)
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+```
 
 ---
 *Built with ❤️ to make learning magical.*

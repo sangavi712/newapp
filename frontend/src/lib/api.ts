@@ -14,7 +14,18 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Unwrap standardized API response format { success, message, data }
+    if (response.data && typeof response.data === 'object' && 'success' in response.data && 'data' in response.data) {
+      const { success, message, data } = response.data;
+      response.data = data || {};
+      if (message && typeof response.data === 'object') {
+        response.data._serverMessage = message;
+        response.data._success = success;
+      }
+    }
+    return response;
+  },
   (error) => {
     if (error.response && error.response.status === 401) {
       const url = error.config?.url;
