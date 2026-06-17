@@ -187,18 +187,22 @@ def login():
 
     user_doc = None
     if mongo_db is not None:
-        # 1. Search in MongoDB Atlas (allow username, email or phone)
-        user_doc = mongo_db['users'].find_one({
-            '$or': [
-                { 'username': identity },
-                { 'email': identity },
-                { 'phone': identity }
-            ]
-        })
+        try:
+            # 1. Search in MongoDB Atlas (allow username, email or phone)
+            user_doc = mongo_db['users'].find_one({
+                '$or': [
+                    { 'username': identity },
+                    { 'email': identity },
+                    { 'phone': identity }
+                ]
+            })
+        except Exception as e:
+            logger.error(f"Login database connection failure: {e}")
+            return jsonify({'message': 'Database connection failure. Please try again later.'}), 503
         
         if not user_doc:
             logger.warning(f"Login failure: User with identity '{identity}' not found in MongoDB Atlas.")
-            return jsonify({'message': 'Account with this Username, Email, or Phone does not exist'}), 401
+            return jsonify({'message': 'User not found. Account with this Username, Email, or Phone does not exist.'}), 404
             
         # Verify password (supporting legacy Werkzeug and new bcrypt hashes)
         pw_ok = False
@@ -215,7 +219,7 @@ def login():
             
         if not pw_ok:
             logger.warning(f"Login failure: Incorrect password supplied for '{identity}' (MongoDB Atlas).")
-            return jsonify({'message': 'Incorrect password'}), 401
+            return jsonify({'message': 'Invalid password. Please try again.'}), 401
             
         user_id = user_doc['id']
         username = user_doc['username']
@@ -228,11 +232,16 @@ def login():
             logger.error(f"Error during SQLite synchronization for user_id={user_id}: {e}")
         
     else:
-        # SQLite fallback search (allow username, email or phone)
-        user = User.query.filter((User.username == identity) | (User.email == identity) | (User.phone == identity)).first()
+        try:
+            # SQLite fallback search (allow username, email or phone)
+            user = User.query.filter((User.username == identity) | (User.email == identity) | (User.phone == identity)).first()
+        except Exception as e:
+            logger.error(f"Login local database failure: {e}")
+            return jsonify({'message': 'Database connection failure. Please try again later.'}), 503
+            
         if not user:
             logger.warning(f"Login failure: User with identity '{identity}' not found in local SQLite database.")
-            return jsonify({'message': 'Account with this Username, Email, or Phone does not exist'}), 401
+            return jsonify({'message': 'User not found. Account with this Username, Email, or Phone does not exist.'}), 404
             
         # Verify password (supporting legacy Werkzeug and new bcrypt hashes)
         pw_ok = False
@@ -249,7 +258,7 @@ def login():
             
         if not pw_ok:
             logger.warning(f"Login failure: Incorrect password supplied for '{identity}' (SQLite).")
-            return jsonify({'message': 'Incorrect password'}), 401
+            return jsonify({'message': 'Invalid password. Please try again.'}), 401
             
         user_id = user.id
         username = user.username

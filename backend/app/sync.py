@@ -12,7 +12,7 @@ mongo_db = None
 def init_mongodb(app):
     """
     Initializes the MongoDB client. Reads MONGODB_URI and MONGODB_DB from the environment.
-    Falls back gracefully if not configured.
+    Raises an error if MONGODB_URI is not set.
     """
     global mongo_client, mongo_db
     
@@ -20,12 +20,12 @@ def init_mongodb(app):
     mongo_uri = os.environ.get('MONGODB_URI')
     db_name = os.environ.get('MONGODB_DB', 'buddylearn')
     
+    # Production-safe logging for diagnostics
+    logger.info("MongoDB URI configured: %s", bool(mongo_uri))
+    
     if not mongo_uri:
-        print("\n" + "="*80)
-        print("WARNING: MONGODB_URI environment variable is not set!")
-        print("Application will run in LOCAL-ONLY mode using SQLite.")
-        print("="*80 + "\n")
-        return False
+        logger.error("CRITICAL: MONGODB_URI environment variable is missing.")
+        raise ValueError("Missing required MONGODB_URI environment variable. Application cannot start.")
 
     try:
         # Connect to MongoDB Atlas (with a 5 second connection timeout)
@@ -34,22 +34,24 @@ def init_mongodb(app):
         mongo_client.admin.command('ping')
         mongo_db = mongo_client[db_name]
         
+        logger.info("MongoDB connection successful. Connected to database: '%s'", db_name)
         print("\n" + "="*80)
         print(f"SUCCESS: Connected to MongoDB Atlas! Database: '{db_name}'")
         print("All user data updates will be synced to the cloud.")
         print("="*80 + "\n")
         return True
     except Exception as e:
+        logger.error("MongoDB connection failed: %s", e)
         print("\n" + "="*80)
-        print(f"ERROR: Failed to connect to MongoDB Atlas at: {mongo_uri}")
+        print(f"ERROR: Failed to connect to MongoDB Atlas.")
         print(f"Detail: {e}")
         import traceback
         traceback.print_exc()
-        print("Application will run in LOCAL-ONLY mode using SQLite.")
         print("="*80 + "\n")
         mongo_client = None
         mongo_db = None
-        return False
+        # Raise error instead of falling back
+        raise RuntimeError(f"Failed to connect to MongoDB Atlas: {e}")
 
 def get_next_sequence_value(db, name):
     """
