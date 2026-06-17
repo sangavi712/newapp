@@ -168,7 +168,8 @@ def sync_mongo_to_sql(user_id):
     """
     if mongo_db is None:
         return False
-        
+
+    # pyrefly: ignore [missing-import]
     from app.models import (
         User, UserProfile, Streak, KnowledgeTree, UserVocabularyProgress, 
         CodingProgress, QuizAttempt, UserAchievement, StudyPlan, Review, 
@@ -176,6 +177,7 @@ def sync_mongo_to_sql(user_id):
         UserStoryInteraction, UserMusicInteraction, MusicPlaylist, 
         MusicPlaylistTrack, UserKidsProgress
     )
+    # pyrefly: ignore [missing-import]
     from app.extensions import db
 
     try:
@@ -202,9 +204,29 @@ def sync_mongo_to_sql(user_id):
         db.session.query(UserMusicInteraction).filter_by(user_id=user_id).delete(synchronize_session=False)
         db.session.query(MusicPlaylist).filter_by(user_id=user_id).delete(synchronize_session=False)
         db.session.query(UserKidsProgress).filter_by(user_id=user_id).delete(synchronize_session=False)
+        
+        # Delete related records first to avoid foreign key constraints
         db.session.query(UserProfile).filter_by(user_id=user_id).delete(synchronize_session=False)
         db.session.query(Streak).filter_by(user_id=user_id).delete(synchronize_session=False)
         db.session.query(KnowledgeTree).filter_by(user_id=user_id).delete(synchronize_session=False)
+        db.session.query(UserVocabularyProgress).filter_by(user_id=user_id).delete(synchronize_session=False)
+        db.session.query(StudyPlan).filter_by(user_id=user_id).delete(synchronize_session=False)
+        db.session.query(UserAchievement).filter_by(user_id=user_id).delete(synchronize_session=False)
+        
+        # 3. Pull User record from MongoDB Atlas
+        user_doc = mongo_db['users'].find_one({'_id': user_id})
+        if not user_doc:
+            return False
+            
+        # Avoid UNIQUE constraint failures by deleting existing conflicting emails/phones in SQLite cache
+        email = user_doc.get('email')
+        if email:
+            db.session.query(User).filter_by(email=email).delete(synchronize_session=False)
+            
+        phone = user_doc.get('phone')
+        if phone:
+            db.session.query(User).filter_by(phone=phone).delete(synchronize_session=False)
+            
         db.session.query(User).filter_by(id=user_id).delete(synchronize_session=False)
         db.session.commit()
         
@@ -229,11 +251,6 @@ def sync_mongo_to_sql(user_id):
             obj = model_cls(**kwargs)
             db.session.add(obj)
             return obj
-            
-        # 3. Pull User record from MongoDB Atlas
-        user_doc = mongo_db['users'].find_one({'_id': user_id})
-        if not user_doc:
-            return False
             
         insert_doc_to_sql(User, user_doc)
         

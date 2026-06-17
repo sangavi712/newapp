@@ -16,7 +16,7 @@ client = openai.OpenAI(api_key=openai_api_key) if openai_api_key else None
 @jwt_required()
 def chat():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = User.query.get(int(current_user_id))
     data = request.get_json()
     
     user_message = data.get('message')

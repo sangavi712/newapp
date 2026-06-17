@@ -6,7 +6,7 @@ from app.models import Vocabulary, UserVocabularyProgress, Streak, User
 from app.extensions import db
 # pyrefly: ignore [missing-import]
 from app.gamification import award_xp, award_coins
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 import random
 import hashlib
 
@@ -92,14 +92,14 @@ def complete_word():
             vocabulary_id=vocab_id,
             status='learning',
             review_stage=0,
-            next_review_date=datetime.utcnow() + SPACED_REPETITION_INTERVALS[0]
+            next_review_date=datetime.now(timezone.utc) + SPACED_REPETITION_INTERVALS[0]
         )
         db.session.add(progress)
     else:
         # Increase review stage and set next review date
         if progress.review_stage < 4:
             progress.review_stage += 1
-        progress.next_review_date = datetime.utcnow() + SPACED_REPETITION_INTERVALS[progress.review_stage]
+        progress.next_review_date = datetime.now(timezone.utc) + SPACED_REPETITION_INTERVALS[progress.review_stage]
         if progress.review_stage == 4:
             progress.status = 'learned'
 
@@ -311,7 +311,7 @@ def get_library():
 @jwt_required()
 def get_stats():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = User.query.get(int(current_user_id))
     if not user:
         return jsonify({'message': 'User not found'}), 404
 

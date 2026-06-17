@@ -90,7 +90,7 @@ def submit_lesson():
 def get_dashboard():
     current_user_id = get_jwt_identity()
     
-    user = User.query.get(current_user_id)
+    user = User.query.get(int(current_user_id))
     profile = user.profile if user else None
     streak = user.streaks if user else None
     

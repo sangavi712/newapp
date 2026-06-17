@@ -51,7 +51,7 @@ def check_and_unlock_achievements(user):
 @jwt_required()
 def get_dashboard():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = User.query.get(int(current_user_id))
     
     if not user:
         return jsonify({'message': 'User not found'}), 404
@@ -60,7 +60,7 @@ def get_dashboard():
     check_and_unlock_achievements(user)
 
     # Re-fetch user in case XP/level changed
-    user = User.query.get(current_user_id)
+    user = User.query.get(int(current_user_id))
 
     # Dummy data for daily words - in production this would come from a tailored query
     daily_words = Vocabulary.query.limit(5).all()
@@ -95,7 +95,7 @@ def get_dashboard():
 @jwt_required()
 def get_achievements():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = User.query.get(int(current_user_id))
     
     if not user:
         return jsonify({'message': 'User not found'}), 404
