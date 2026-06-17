@@ -1,7 +1,10 @@
 import unittest
 import json
+# pyrefly: ignore [missing-import]
 from app import create_app
+# pyrefly: ignore [missing-import]
 from app.extensions import db
+# pyrefly: ignore [missing-import]
 from app.models import User
 
 class AuthIntegrationTestCase(unittest.TestCase):

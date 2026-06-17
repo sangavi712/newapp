@@ -4,9 +4,13 @@ import random
 import logging
 from datetime import datetime
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity  # type: ignore
+# pyrefly: ignore [missing-import]
 from app.api import auth_bp
+# pyrefly: ignore [missing-import]
 from app.extensions import db
+# pyrefly: ignore [missing-import]
 from app.models import User, UserProfile, KnowledgeTree, Streak
+# pyrefly: ignore [missing-import]
 from app.sync import mongo_db, get_next_sequence_value, sync_mongo_to_sql
 
 logger = logging.getLogger(__name__)
@@ -52,55 +56,59 @@ def register():
 
     # 3. Create records (Write to MongoDB if active, sync back to SQLite; else write to SQLite directly)
     if mongo_db is not None:
-        # Sequence generation for User integer ID
-        user_id = get_next_sequence_value(mongo_db, 'user_id')
-        
-        user_doc = {
-            '_id': user_id,
-            'id': user_id,
-            'username': username,
-            'email': email,
-            'phone': phone,
-            'password_hash': password_hash,
-            'created_at': datetime.utcnow().isoformat()
-        }
-        mongo_db['users'].insert_one(user_doc)
-        
-        # UserProfile, Streak, and KnowledgeTree docs
-        profile_doc = {
-            '_id': user_id,
-            'id': user_id,
-            'user_id': user_id,
-            'age_group': age_group,
-            'avatar_url': None,
-            'xp': 0,
-            'level': 1,
-            'coins': 0,
-            'updated_at': datetime.utcnow().isoformat()
-        }
-        mongo_db['user_profiles'].insert_one(profile_doc)
-        
-        streak_doc = {
-            '_id': user_id,
-            'id': user_id,
-            'user_id': user_id,
-            'current_streak': 0,
-            'highest_streak': 0,
-            'last_login_date': None
-        }
-        mongo_db['streaks'].insert_one(streak_doc)
-        
-        tree_doc = {
-            '_id': user_id,
-            'id': user_id,
-            'user_id': user_id,
-            'stage': 1,
-            'growth_points': 0
-        }
-        mongo_db['knowledge_tree'].insert_one(tree_doc)
-        
-        # Mirror to local SQLite Cache
-        sync_mongo_to_sql(user_id)
+        try:
+            # Sequence generation for User integer ID
+            user_id = get_next_sequence_value(mongo_db, 'user_id')
+            
+            user_doc = {
+                '_id': user_id,
+                'id': user_id,
+                'username': username,
+                'email': email,
+                'phone': phone,
+                'password_hash': password_hash,
+                'created_at': datetime.utcnow().isoformat()
+            }
+            mongo_db['users'].insert_one(user_doc)
+            
+            # UserProfile, Streak, and KnowledgeTree docs
+            profile_doc = {
+                '_id': user_id,
+                'id': user_id,
+                'user_id': user_id,
+                'age_group': age_group,
+                'avatar_url': None,
+                'xp': 0,
+                'level': 1,
+                'coins': 0,
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            mongo_db['user_profiles'].insert_one(profile_doc)
+            
+            streak_doc = {
+                '_id': user_id,
+                'id': user_id,
+                'user_id': user_id,
+                'current_streak': 0,
+                'highest_streak': 0,
+                'last_login_date': None
+            }
+            mongo_db['streaks'].insert_one(streak_doc)
+            
+            tree_doc = {
+                '_id': user_id,
+                'id': user_id,
+                'user_id': user_id,
+                'stage': 1,
+                'growth_points': 0
+            }
+            mongo_db['knowledge_tree'].insert_one(tree_doc)
+            
+            # Mirror to local SQLite Cache
+            sync_mongo_to_sql(user_id)
+        except Exception as e:
+            logger.error(f"Registration database error: {e}")
+            return jsonify({'message': 'Database connection failure during registration. Please try again later.'}), 503
         
     else:
         # Local-only SQLite fallback creation

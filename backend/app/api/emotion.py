@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+# pyrefly: ignore [missing-import]
 from app.models import EmotionLog
+# pyrefly: ignore [missing-import]
 from app.extensions import db
 
 emotion_bp = Blueprint('emotion', __name__, url_prefix='/api/emotion')

@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from app.extensions import db
 from datetime import datetime
 

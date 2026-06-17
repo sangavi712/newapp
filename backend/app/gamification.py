@@ -1,4 +1,6 @@
+# pyrefly: ignore [missing-import]
 from app.extensions import db
+# pyrefly: ignore [missing-import]
 from app.models import UserProfile, KnowledgeTree, Streak
 
 def award_xp(user_id, amount):

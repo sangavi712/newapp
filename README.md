@@ -106,10 +106,16 @@ venv\Scripts\activate
 python seed.py
 ```
 
-## 🌐 Deployment
+## 🌐 Production Deployment
 
-- **Frontend**: Fully optimized for one-click deployment on [Vercel](https://vercel.com). Connect this repository to Vercel, and configure `NEXT_PUBLIC_API_URL` pointing to your deployed backend URL.
-- **Backend**: Can be deployed on any Python-friendly hosting service like Render, Heroku, or Railway. Ensure you configure `MONGODB_URI` for persistent cloud storage.
+- **Frontend (Vercel)**: Fully optimized for one-click deployment on [Vercel](https://vercel.com). Connect this repository to Vercel, and configure the following environment variable:
+  - `NEXT_PUBLIC_API_URL`: Your deployed backend URL (e.g., `https://<backend>.onrender.com/api`)
+
+- **Backend (Render / Railway / Heroku)**: Can be deployed on any Python-friendly hosting service. Ensure you configure the following environment variables:
+  - `MONGODB_URI`: Your MongoDB Atlas connection string for persistent cloud storage and cross-device sync.
+  - `CLIENT_URL`: Your deployed frontend URL (e.g., `https://<frontend>.vercel.app`) to configure CORS.
+  - `JWT_SECRET_KEY`: A secure random string for signing authentication tokens.
+  - `OPENAI_API_KEY`: Your OpenAI key for AI Buddy features.
 
 ---
 *Built with ❤️ to make learning magical.*

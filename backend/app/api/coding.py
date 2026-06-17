@@ -1,7 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+# pyrefly: ignore [missing-import]
 from app.models import CodingLesson, CodingProgress
+# pyrefly: ignore [missing-import]
 from app.extensions import db
+# pyrefly: ignore [missing-import]
 from app.gamification import award_xp
 
 coding_bp = Blueprint('coding', __name__, url_prefix='/api/coding')

@@ -1,7 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+# pyrefly: ignore [missing-import]
 from app.models import KidsLesson, UserKidsProgress, User, Streak
+# pyrefly: ignore [missing-import]
 from app.extensions import db
+# pyrefly: ignore [missing-import]
 from app.gamification import award_xp, award_coins
 from datetime import datetime, date, timedelta
 import os

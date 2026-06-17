@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+# pyrefly: ignore [missing-import]
 from app.models import User, StudyPlan
+# pyrefly: ignore [missing-import]
 from app.extensions import db
 from datetime import date
 import json

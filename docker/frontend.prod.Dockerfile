@@ -10,7 +10,8 @@ RUN npm ci || npm install
 # Copy source files and build Next.js
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
-ENV NEXT_PUBLIC_API_URL http://localhost:5000/api
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # Stage 2: Serve Next.js production bundle

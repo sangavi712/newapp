@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 # pyrefly: ignore [missing-import]
 from app.models import BuddyConversation, User
+# pyrefly: ignore [missing-import]
 from app.extensions import db
 import os
 import openai
